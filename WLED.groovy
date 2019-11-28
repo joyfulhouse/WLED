@@ -31,11 +31,11 @@ metadata {
 
         attribute "colorName", "string"
 
-		command "setEffect", 
-            [
-                [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: [], required: true],
-                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: [], required: true],
-            ]
+        command "setEffect", 
+        [
+            [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: [], required: true],
+            [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: [], required: true],
+        ]
     }
 
     // simulator metadata
