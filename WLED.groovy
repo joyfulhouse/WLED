@@ -12,7 +12,7 @@
 *
 *  WLED Device Type
 *
-*  Author: bryan.li@gmail.com
+*  Author: bryan@joyful.house
 *
 *  Date: 2019-11-27
 */
