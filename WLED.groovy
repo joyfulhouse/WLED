@@ -21,12 +21,12 @@ metadata {
 
         attribute "colorName", "string"
 
-		command "setEffect", 
+	command "setEffect", 
             [
                 [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
-				[name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
-				[name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
-                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []],
+		[name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
+		[name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
+                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
             ]
 			
     }
