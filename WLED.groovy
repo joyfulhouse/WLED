@@ -224,12 +224,14 @@ def setColor(value){
 	
 	// Send to WLED
 	setRgbColor(rgbValue)
+	setGenericName(value.hue)
 }
 
 def setColorTemperature(temp){
 	on()
 	rgbValue = colorTempToRgb(temp)
 	setRgbColor(rgbValue)
+	setGenericTempName(temp)
 }
 
 def setHue(value){
