@@ -306,11 +306,11 @@ def logDebug(message){
 }
 
 def hsvToRgb(float hue, float saturation, float value) {
-	hue = hue/100
-	saturation = saturation/100
-	value = value/100
+	hue = hue*0.99/100
+	saturation = saturation*0.99/100
+	value = value*0.99/100
 	
-    int h = (int)(hue * 6)
+	int h = (int)(hue * 6)
     float f = hue * 6 - h
     float p = value * (1 - saturation)
     float q = value * (1 - f * saturation)
