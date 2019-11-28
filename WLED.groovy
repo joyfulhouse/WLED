@@ -14,7 +14,7 @@
 *
 *  Author: bryan.li@gmail.com
 *
-*  Date: 2019-11-28
+*  Date: 2019-11-27
 */
 import java.net.URLEncoder
 
@@ -30,9 +30,12 @@ metadata {
         capability "ColorMode"
 
         attribute "colorName", "string"
-        attribute "WLED_FX", "int"
-        attribute "WLED_Pallet", "int"
-        attribute "numSegments", "int"
+
+		command "setEffect", 
+            [
+                [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: [], required: true],
+                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: [], required: true],
+            ]
     }
 
     // simulator metadata
