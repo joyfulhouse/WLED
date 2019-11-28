@@ -12,68 +12,49 @@
 *
 *  WLED Device Type
 *
-*  Author: bryan@joyful.house
+*  Author: bryan.li@gmail.com
 *
-*  Date: 2019-11-27
+*  Date: 2019-11-28
 */
 import java.net.URLEncoder
 
 metadata {
-	definition (name: "WLED", namespace: "joyfulhouse", author: "Bryan Li") {
+    definition (name: "WLED", namespace: "joyfulhouse", author: "Bryan Li") {
         capability "Color Control"
         capability "Color Temperature"
         capability "Configuration"
         capability "Refresh"
         capability "Switch"
         capability "Switch Level"
-        capability "ChangeLevel"
         capability "Light"
         capability "ColorMode"
 
         attribute "colorName", "string"
-		attribute "WLED_FX", "int"
-		attribute "WLED_Pallet", "int"
-		attribute "numSegments", "int"
-	}
+        attribute "WLED_FX", "int"
+        attribute "WLED_Pallet", "int"
+        attribute "numSegments", "int"
+    }
 
-	// simulator metadata
-	simulator {
+    // simulator metadata
+    simulator {
     
-	}
+    }
     
-	// Preferences
+    // Preferences
     preferences {
-		input "uri", "text", title: "base_url", description: "Base URL of WLED host", required: true, displayDuringSetup: true
+        input "uri", "text", title: "base_url", description: "Base URL of WLED host", required: true, displayDuringSetup: true
         input name: "transitionTime", type: "enum", description: "", title: "Transition time", options: [[500:"500ms"],[1000:"1s"],[1500:"1.5s"],[2000:"2s"],[5000:"5s"]], defaultValue: 1000
-		input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
+        input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
-	
-	
-	// UI tile definitions
-    /*
-	tiles(scale: 2) {
-        standardTile("switch", "device.switch", width: 2, height: 2, canChangeIcon: true) {
-            state "off", label: '${currentValue}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff"
-            state "on", label: '${currentValue}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#00a0dc"
-        }
-		
-		standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "default", label:'', action:"polling.poll", icon:"st.secondary.refresh"
-		}
-
-		main "switch"
-		details(["switch","refresh"])
-	}
-    */
 }
 
 def initialize() {
- 	installed()
+     installed()
 }
 def installed() {
     unschedule()
-	refresh()
+    refresh()
 }
 
 def updated() {
@@ -98,25 +79,25 @@ def parsePostResp(resp){
 def synchronize(data){
     logDebug "Synchronizing status: ${data}"
     // Power
-	if(data.on){
-		if(device.currentValue("switch") != "on")
-			sendEvent(name: "switch", value: "on")
+    if(data.on){
+        if(device.currentValue("switch") != "on")
+            sendEvent(name: "switch", value: "on")
     }
     else {
-		if(device.currentValue("switch") == "on")
-			sendEvent(name: "switch", value: "off")
+        if(device.currentValue("switch") == "on")
+            sendEvent(name: "switch", value: "off")
     }
 }
 
 // Switch Capabilities
 def on() {
     sendEthernetPost("/json/state","{\"on\": true}")    
-	sendEvent(name: "switch", value: "on")
+    sendEvent(name: "switch", value: "on")
 }
 
 def off() {
-	sendEthernetPost("/json/state","{\"on\": false}")    
-	sendEvent(name: "switch", value: "off")
+    sendEthernetPost("/json/state","{\"on\": false}")    
+    sendEvent(name: "switch", value: "off")
 }
 
 // Color Names
@@ -184,20 +165,20 @@ def setLevel(value) {
 }
 
 def setLevel(value,rate) {
-	rate = rate.toBigDecimal()
+    rate = rate.toBigDecimal()
     def scaledRate = (rate * 10).toInteger()
     
-	if(value > 0){
-		def isOn = device.currentValue("switch") == "on"
-		value = (value.toInteger() * 2.55).toInteger()
-		
-		msg = "{\"on\": true, \"bri\": ${value}}"
-		sendEthernetPost("/json/state", msg)
-	} else {
-		off()
-	}
-	
-	refresh()
+    if(value > 0){
+        def isOn = device.currentValue("switch") == "on"
+        value = (value.toInteger() * 2.55).toInteger()
+        
+        msg = "{\"on\": true, \"bri\": ${value}}"
+        sendEthernetPost("/json/state", msg)
+    } else {
+        off()
+    }
+    
+    refresh()
 }
 
 def startLevelChange(direction){
@@ -211,47 +192,47 @@ def setColor(value){
     if (value.hue == null || value.saturation == null) return
     def rate = transitionTime?.toInteger() ?: 1000
 
-	// Turn off if level is set to 0/black
-	if (value.level == 0) {
-		off()
-		return
-	} else {
-		level = value.level * 256
-	}
-	
-	// Convert to RGB from HSV
+    // Turn off if level is set to 0/black
+    if (value.level == 0) {
+        off()
+        return
+    } else {
+        level = value.level * 256
+    }
+    
+    // Convert to RGB from HSV
     rgbValue = hsvToRgb(value.hue, value.saturation, value.level)
-	
-	// Send to WLED
-	setRgbColor(rgbValue)
-	setGenericName(value.hue)
+    
+    // Send to WLED
+    setRgbColor(rgbValue)
+    setGenericName(value.hue)
 }
 
 def setColorTemperature(temp){
-	on()
-	rgbValue = colorTempToRgb(temp)
-	setRgbColor(rgbValue)
-	setGenericTempName(temp)
+    on()
+    rgbValue = colorTempToRgb(temp)
+    setRgbColor(rgbValue)
+    setGenericTempName(temp)
 }
 
 def setHue(value){
-	def color = [:]
-	color.hue = value
-	color.level = state.bri/256*100
-	color.saturation = 100
-	
-	setColor(color)
+    def color = [:]
+    color.hue = value
+    color.level = state.bri/256*100
+    color.saturation = 100
+    
+    setColor(color)
 }
 
 def setRgbColor(rgbValue){
-	// Turn off any active effects
-	setEffect(0,0)
-	
-	// Send Color
-	body = "{\"seg\": [{\"col\": [${rgbValue}]}]}"
-	log.debug(body)
-	sendEthernetPost("/json/state", body)
-	refresh()
+    // Turn off any active effects
+    setEffect(0,0)
+    
+    // Send Color
+    body = "{\"seg\": [{\"col\": [${rgbValue}]}]}"
+    log.debug(body)
+    sendEthernetPost("/json/state", body)
+    refresh()
 }
 
 // Device Functions
@@ -260,57 +241,58 @@ def refresh() {
 }
 
 def sendEthernet(path) {
-	if(settings.uri != null){
-		def params = [
-			uri: "${settings.uri}",
-			path: "${path}",
-			headers: [:]
-		]
+    if(settings.uri != null){
+        def params = [
+            uri: "${settings.uri}",
+            path: "${path}",
+            headers: [:]
+        ]
 
-		try {
-			httpGet(params) { resp ->
-				parseResp(resp)
-			}
-		} catch (e) {
-			log.error "something went wrong: $e"
-		}
-	}
+        try {
+            httpGet(params) { resp ->
+                parseResp(resp)
+            }
+        } catch (e) {
+            log.error "something went wrong: $e"
+        }
+    }
 }
 
 def sendEthernetPost(path, body) {
-	if(settings.uri != null){
-		
-		def params = [
-			uri: "${settings.uri}",
-			path: "${path}",
-			headers: [
-					"Content-Type": "application/json",
-					"Accept": "*/*"
-				],
-			body: "${body}"
-		]
+    if(settings.uri != null){
+        
+        def params = [
+            uri: "${settings.uri}",
+            path: "${path}",
+            headers: [
+                    "Content-Type": "application/json",
+                    "Accept": "*/*"
+                ],
+            body: "${body}"
+        ]
 
-		try {
-			httpPost(params) { resp ->
-				parsePostResp(resp)
-			}
-		} catch (e) {
-			log.error "something went wrong: $e"
-		}
-	}
+        try {
+            httpPost(params) { resp ->
+                parsePostResp(resp)
+            }
+        } catch (e) {
+            log.error "something went wrong: $e"
+        }
+    }
 }
 
 // Helper Functions
 def logDebug(message){
-	if(logEnable) log.debug(message)
+    if(logEnable) log.debug(message)
 }
 
 def hsvToRgb(float hue, float saturation, float value) {
-	hue = hue*0.99/100
-	saturation = saturation*0.99/100
-	value = value*0.99/100
-	
-	int h = (int)(hue * 6)
+    if(hue==100) hue = 99
+    hue = hue/100
+    saturation = saturation/100
+    value = value/100
+    
+    int h = (int)(hue * 6)
     float f = hue * 6 - h
     float p = value * (1 - saturation)
     float q = value * (1 - f * saturation)
@@ -328,9 +310,9 @@ def hsvToRgb(float hue, float saturation, float value) {
 }
 
 def colorTempToRgb(kelvin){
-	temp = kelvin/100
-	
-	if( temp <= 66 ){ 
+    temp = kelvin/100
+    
+    if( temp <= 66 ){ 
         red = 255
         green = temp
         green = 99.4708025861 * Math.log(green) - 161.1195681661
@@ -347,12 +329,12 @@ def colorTempToRgb(kelvin){
         green = 288.1221695283 * Math.pow(green, -0.0755148492 )
         blue = 255
     }
-	
-	rs = clamp(red,0, 255)
-	gs = clamp(green,0,255)
-	bs = clamp(blue,0, 255)
-	
-	return "[" + rs + "," + gs + "," + bs + "]";
+    
+    rs = clamp(red,0, 255)
+    gs = clamp(green,0,255)
+    bs = clamp(blue,0, 255)
+    
+    return "[" + rs + "," + gs + "," + bs + "]";
 }
 
 def rgbToString(float r, float g, float b) {
@@ -370,7 +352,7 @@ def clamp( x, min, max ) {
 
 // FastLED FX and Palletes
 def setEffect(fx, pal){
-	body = "{\"on\":true, \"seg\": [{\"fx\": ${fx},\"pal\": ${pal}}]}"
-	sendEthernetPost("/json/state", body)
-	refresh()
+    body = "{\"on\":true, \"seg\": [{\"fx\": ${fx},\"pal\": ${pal}}]}"
+    sendEthernetPost("/json/state", body)
+    refresh()
 }
