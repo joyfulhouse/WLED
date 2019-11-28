@@ -1,18 +1,8 @@
 /**
-*  Copyright 2020 Hubitat
-*
-*  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-*  in compliance with the License. You may obtain a copy of the License at:
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-*  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
-*  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
-*  for the specific language governing permissions and limitations under the License.
 *
 *  WLED Device Type
 *
-*  Author: bryan.li@gmail.com
+*  Author: bryan@joyful.house
 *
 *  Date: 2019-11-27
 */
@@ -31,11 +21,14 @@ metadata {
 
         attribute "colorName", "string"
 
-        command "setEffect", 
-        [
-            [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: [], required: true],
-            [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: [], required: true],
-        ]
+		command "setEffect", 
+            [
+                [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
+				[name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
+				[name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
+                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []],
+            ]
+			
     }
 
     // simulator metadata
@@ -46,6 +39,7 @@ metadata {
     // Preferences
     preferences {
         input "uri", "text", title: "base_url", description: "Base URL of WLED host", required: true, displayDuringSetup: true
+		input name: "ledSegment", type: "number", title: "LED Segment", defaultValue: 0
         input name: "transitionTime", type: "enum", description: "", title: "Transition time", options: [[500:"500ms"],[1000:"1s"],[1500:"1.5s"],[2000:"2s"],[5000:"5s"]], defaultValue: 1000
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -184,12 +178,6 @@ def setLevel(value,rate) {
     refresh()
 }
 
-def startLevelChange(direction){
-}
-
-def stopLevelChange(){
-}
-
 // Color Functions
 def setColor(value){
     if (value.hue == null || value.saturation == null) return
@@ -233,7 +221,7 @@ def setRgbColor(rgbValue){
     
     // Send Color
     body = "{\"seg\": [{\"col\": [${rgbValue}]}]}"
-    log.debug(body)
+    logDebug("Setting color: ${body}")
     sendEthernetPost("/json/state", body)
     refresh()
 }
@@ -354,8 +342,24 @@ def clamp( x, min, max ) {
 }
 
 // FastLED FX and Palletes
+def setEffect(fx){
+    def i = ledSegment?.toInteger() ?: 0
+    setEffect(fx, state.seg[i].sx, state.seg[i].ix, state.seg.pal)
+}
+
 def setEffect(fx, pal){
-    body = "{\"on\":true, \"seg\": [{\"fx\": ${fx},\"pal\": ${pal}}]}"
+    def i = ledSegment?.toInteger() ?: 0
+    setEffect(fx, state.seg[i].sx, state.seg[i].ix, pal)
+}
+
+def setEffect(fx,sx,ix){
+    def i = ledSegment?.toInteger() ?: 0
+    setEffect(fx, sx, ix, state.seg[i].pal)
+}
+
+def setEffect(fx, sx, ix, pal){
+	logDebug("Setting Effect: [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]")
+    body = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]}"
     sendEthernetPost("/json/state", body)
     refresh()
 }
