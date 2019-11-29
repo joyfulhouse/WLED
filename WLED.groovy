@@ -10,29 +10,29 @@ import java.net.URLEncoder
 
 metadata {
     definition (name: "WLED", namespace: "joyfulhouse", author: "Bryan Li") {
-		capability "Color Control"
-		capability "Color Temperature"
-		capability "Refresh"
-		capability "Switch"
-		capability "Switch Level"
-		capability "Light"
-		capability "ColorMode"
+        capability "Color Control"
+        capability "Color Temperature"
+        capability "Refresh"
+        capability "Switch"
+        capability "Switch Level"
+        capability "Light"
+        capability "ColorMode"
 
-		capability "Alarm"
+        capability "Alarm"
 
-		attribute "colorName", "string"
+        attribute "colorName", "string"
         attribute "effectName", "string"
         attribute "paletteName", "string"
 
-		command "getEffects"
+        command "getEffects"
         command "getPalettes"
-		command "setEffect", 
-			[
-				[name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
-				[name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
-				[name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
-				[name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
-			]
+        command "setEffect", 
+            [
+                [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
+                [name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
+                [name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
+                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
+            ]
     }
 
     // simulator metadata
@@ -43,7 +43,7 @@ metadata {
     // Preferences
     preferences {
         input "uri", "text", title: "base_url", description: "Base URL of WLED host", required: true, displayDuringSetup: true
-		input name: "ledSegment", type: "number", title: "LED Segment", defaultValue: 0
+        input name: "ledSegment", type: "number", title: "LED Segment", defaultValue: 0
         input name: "transitionTime", type: "enum", description: "", title: "Transition time", options: [[500:"500ms"],[1000:"1s"],[1500:"1.5s"],[2000:"2s"],[5000:"5s"]], defaultValue: 1000
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -69,17 +69,17 @@ def logsOff(){
 }
 
 def parseResp(resp) {
-	// Handle Effects and Palettes
-	if(!state.effects)
-		getEffects()
-	
-	if(!state.palettes)
-		getPalettes()
-	
-	def effects = state.effects
+    // Handle Effects and Palettes
+    if(!state.effects)
+        getEffects()
+    
+    if(!state.palettes)
+        getPalettes()
+    
+    def effects = state.effects
     def palettes = state.palettes
     
-	// Update State
+    // Update State
     state = resp.data
     state.effects = effects
     state.palettes = palettes
@@ -102,8 +102,8 @@ def synchronize(data){
         if(device.currentValue("switch") == "on")
             sendEvent(name: "switch", value: "off")
     }
-	
-	//TODO: Synchronize everything else
+    
+    //TODO: Synchronize everything else
 }
 
 // Switch Capabilities
@@ -187,14 +187,14 @@ def setLevel(value,rate) {
     
     if(value > 0){
         def isOn = device.currentValue("switch") == "on"
-		if(!isOn)
-			on()
-		
+        if(!isOn)
+            on()
+        
         setValue = (value.toInteger() * 2.55).toInteger()
         
         msg = "{\"on\": true, \"bri\": ${setValue}}"
         sendEthernetPost("/json/state", msg)
-		sendEvent(name: "level", value: value, descriptionText: "${device.displayName} is ${value}%", unit: "%")
+        sendEvent(name: "level", value: value, descriptionText: "${device.displayName} is ${value}%", unit: "%")
     } else {
         off()
     }
@@ -428,7 +428,7 @@ def setEffect(fx,sx,ix){
 }
 
 def setEffect(fx, sx, ix, pal){
-	logDebug("Setting Effect: [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]")
+    logDebug("Setting Effect: [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]")
     body = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]}"
     
     sendEthernetPost("/json/state", body)
@@ -438,17 +438,17 @@ def setEffect(fx, sx, ix, pal){
     def descriptionText = "${device.getDisplayName()} effect is ${effectName}"
     if (txtEnable) log.info "${descriptionText}"
     sendEvent(name: "effectName", value: effectName, descriptionText: descriptionText)
-    	
-	// Palette Name
-	def paletteName = state.palettes.getAt(pal.intValue())
-	descriptionText = "${device.getDisplayName()} color palette is ${paletteName}"
-	if (txtEnable) log.info "${descriptionText}"
-	sendEvent(name: "paletteName", value: paletteName, descriptionText: descriptionText)
+        
+    // Palette Name
+    def paletteName = state.palettes.getAt(pal.intValue())
+    descriptionText = "${device.getDisplayName()} color palette is ${paletteName}"
+    if (txtEnable) log.info "${descriptionText}"
+    sendEvent(name: "paletteName", value: paletteName, descriptionText: descriptionText)
 
     if(fx > 0){
-		// Color Name
-		descriptionText = "${device.getDisplayName()} color is defined by palette"
-		sendEvent(name: "colorName", value: "Palette", descriptionText: descriptionText)
+        // Color Name
+        descriptionText = "${device.getDisplayName()} color is defined by palette"
+        sendEvent(name: "colorName", value: "Palette", descriptionText: descriptionText)
     }
     
     // Refresh
@@ -457,18 +457,18 @@ def setEffect(fx, sx, ix, pal){
 
 // Alarm Functions
 def siren(){
-	// Play "Siren" effect
-	logDebug("Alarm \"siren\" activated")
-	setEffect(38,255,255,0)
+    // Play "Siren" effect
+    logDebug("Alarm \"siren\" activated")
+    setEffect(38,255,255,0)
 }
 
 def strobe(){
-	// Set Effect to Strobe
-	logDebug("Alarm strobe activated")
-	setEffect(23,255,255,0)
+    // Set Effect to Strobe
+    logDebug("Alarm strobe activated")
+    setEffect(23,255,255,0)
 }
 
 def both(){
-	//Cannot do both, default to strobe
-	strobe()
+    //Cannot do both, default to strobe
+    strobe()
 }
