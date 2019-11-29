@@ -10,25 +10,29 @@ import java.net.URLEncoder
 
 metadata {
     definition (name: "WLED", namespace: "joyfulhouse", author: "Bryan Li") {
-        capability "Color Control"
-        capability "Color Temperature"
-        capability "Configuration"
-        capability "Refresh"
-        capability "Switch"
-        capability "Switch Level"
-        capability "Light"
-        capability "ColorMode"
+		capability "Color Control"
+		capability "Color Temperature"
+		capability "Refresh"
+		capability "Switch"
+		capability "Switch Level"
+		capability "Light"
+		capability "ColorMode"
 
-        attribute "colorName", "string"
+		capability "Alarm"
 
-	command "setEffect", 
-            [
-                [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
-		[name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
-		[name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
-                [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
-            ]
-			
+		attribute "colorName", "string"
+        attribute "effectName", "string"
+        attribute "paletteName", "string"
+
+		command "getEffects"
+        command "getPalettes"
+		command "setEffect", 
+			[
+				[name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
+				[name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
+				[name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
+				[name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
+			]
     }
 
     // simulator metadata
@@ -65,7 +69,21 @@ def logsOff(){
 }
 
 def parseResp(resp) {
+	// Handle Effects and Palettes
+	if(!state.effects)
+		getEffects()
+	
+	if(!state.palettes)
+		getPalettes()
+	
+	def effects = state.effects
+    def palettes = state.palettes
+    
+	// Update State
     state = resp.data
+    state.effects = effects
+    state.palettes = palettes
+    
     synchronize(resp.data)
 }
 
@@ -84,6 +102,8 @@ def synchronize(data){
         if(device.currentValue("switch") == "on")
             sendEvent(name: "switch", value: "off")
     }
+	
+	//TODO: Synchronize everything else
 }
 
 // Switch Capabilities
@@ -167,10 +187,14 @@ def setLevel(value,rate) {
     
     if(value > 0){
         def isOn = device.currentValue("switch") == "on"
-        value = (value.toInteger() * 2.55).toInteger()
+		if(!isOn)
+			on()
+		
+        setValue = (value.toInteger() * 2.55).toInteger()
         
-        msg = "{\"on\": true, \"bri\": ${value}}"
+        msg = "{\"on\": true, \"bri\": ${setValue}}"
         sendEthernetPost("/json/state", msg)
+		sendEvent(name: "level", value: value, descriptionText: "${device.displayName} is ${value}%", unit: "%")
     } else {
         off()
     }
@@ -195,6 +219,7 @@ def setColor(value){
     rgbValue = hsvToRgb(value.hue, value.saturation, value.level)
     
     // Send to WLED
+    logDebug("Setting RGB Color to ${rgbValue}")
     setRgbColor(rgbValue)
     setGenericName(value.hue)
 }
@@ -329,9 +354,9 @@ def colorTempToRgb(kelvin){
 }
 
 def rgbToString(float r, float g, float b) {
-    String rs = (int)(r * 256)
-    String gs = (int)(g * 256)
-    String bs = (int)(b * 256)
+    String rs = (int)(r * 255)
+    String gs = (int)(g * 255)
+    String bs = (int)(b * 255)
     return "[" + rs + "," + gs + "," + bs + "]";
 }
 
@@ -342,6 +367,51 @@ def clamp( x, min, max ) {
 }
 
 // FastLED FX and Palletes
+
+def getEffects(){
+    logDebug "Getting Effects List"
+    def params = [
+        uri: "${settings.uri}",
+        path: "/json/effects",
+        headers: [
+            "Content-Type": "application/json",
+            "Accept": "*/*"
+        ],
+        body: "${body}"
+    ]
+
+    try {
+        httpGet(params) {
+            resp ->
+                state.effects = resp.data
+        }
+    } catch (e) {
+        log.error "something went wrong: $e"
+    }
+}
+
+def getPalettes(){
+    logDebug "Getting Effects List"
+    def params = [
+        uri: "${settings.uri}",
+        path: "/json/palettes",
+        headers: [
+            "Content-Type": "application/json",
+            "Accept": "*/*"
+        ],
+        body: "${body}"
+    ]
+
+    try {
+        httpGet(params) {
+            resp ->
+                state.palettes = resp.data
+        }
+    } catch (e) {
+        log.error "something went wrong: $e"
+    }
+}
+
 def setEffect(fx){
     def i = ledSegment?.toInteger() ?: 0
     setEffect(fx, state.seg[i].sx, state.seg[i].ix, state.seg.pal)
@@ -360,6 +430,45 @@ def setEffect(fx,sx,ix){
 def setEffect(fx, sx, ix, pal){
 	logDebug("Setting Effect: [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]")
     body = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment},\"fx\": ${fx},\"sx\": ${sx},\"ix\": ${ix},\"pal\": ${pal}}]}"
+    
     sendEthernetPost("/json/state", body)
+    
+    // Effect Name
+    def effectName = state.effects.getAt(fx.intValue())
+    def descriptionText = "${device.getDisplayName()} effect is ${effectName}"
+    if (txtEnable) log.info "${descriptionText}"
+    sendEvent(name: "effectName", value: effectName, descriptionText: descriptionText)
+    	
+	// Palette Name
+	def paletteName = state.palettes.getAt(pal.intValue())
+	descriptionText = "${device.getDisplayName()} color palette is ${paletteName}"
+	if (txtEnable) log.info "${descriptionText}"
+	sendEvent(name: "paletteName", value: paletteName, descriptionText: descriptionText)
+
+    if(fx > 0){
+		// Color Name
+		descriptionText = "${device.getDisplayName()} color is defined by palette"
+		sendEvent(name: "colorName", value: "Palette", descriptionText: descriptionText)
+    }
+    
+    // Refresh
     refresh()
+}
+
+// Alarm Functions
+def siren(){
+	// Play "Siren" effect
+	logDebug("Alarm \"siren\" activated")
+	setEffect(38,255,255,0)
+}
+
+def strobe(){
+	// Set Effect to Strobe
+	logDebug("Alarm strobe activated")
+	setEffect(23,255,255,0)
+}
+
+def both(){
+	//Cannot do both, default to strobe
+	strobe()
 }
