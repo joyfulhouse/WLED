@@ -53,14 +53,40 @@ metadata {
 def initialize() {
      installed()
 }
+
 def installed() {
-    unschedule()
+    setSchedule()
     refresh()
 }
 
 def updated() {
-    unschedule()
+    setSchedule()
     refresh()
+}
+
+def setSchedule() {
+	logDebug "Setting refresh interval ${settings.refreshInterval}"
+	unschedule()
+	switch(settings.refreshInterval){
+		case "0":
+			unschedule()
+			break
+		case "300":
+			logDebug "Setting 5 Minute Schedule"
+			schedule("0 0/5 * ? * * *", refresh)
+			break
+		case "600":
+			schedule("0 0/10 * ? * * *", refresh)
+			break
+		case "1800":
+			schedule("0 0/30 * ? * * *", refresh)
+			break
+		case "3600":
+			schedule("0 * 0/1 ? * * *", refresh)
+			break
+		default:
+			unschedule()
+	}
 }
 
 def logsOff(){
