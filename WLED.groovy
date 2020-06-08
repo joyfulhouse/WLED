@@ -46,7 +46,7 @@ metadata {
         input name: "ledSegment", type: "number", title: "LED Segment", defaultValue: 0
         input name: "transitionTime", type: "enum", description: "", title: "Transition time", options: [[500:"500ms"],[1000:"1s"],[1500:"1.5s"],[2000:"2s"],[5000:"5s"]], defaultValue: 1000
         input name: "refreshInterval", type: "enum", description: "", title: "Refresh interval", options: [
-            [300:"5 Minutes"],[600:"10 Minutes"],[1800:"30 Minutes"],[3600:"1 Hour"],[0:"Disabled"]],
+            [30: "30 Seconds"],[60:"1 Minute"],[300:"5 Minutes"],[600:"10 Minutes"],[1800:"30 Minutes"],[3600:"1 Hour"],[0:"Disabled"]],
             defaultValue: 3600
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
@@ -68,14 +68,19 @@ def updated() {
 }
 
 def setSchedule() {
-  logDebug "Setting refresh interval ${settings.refreshInterval}"
+  logDebug "Setting refresh interval to ${settings.refreshInterval}s"
   unschedule()
   switch(settings.refreshInterval){
     case "0":
       unschedule()
       break
+    case "30":
+      schedule("0/30 * * ? * * *", refresh)
+      break
+    case "60":
+      schedule("0 * * ? * * *", refresh)
+      break
     case "300":
-      logDebug "Setting 5 Minute Schedule"
       schedule("0 0/5 * ? * * *", refresh)
       break
     case "600":
