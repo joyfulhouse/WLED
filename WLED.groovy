@@ -245,7 +245,7 @@ def setRgbColor(rgbValue){
     setEffect(0,0)
     
     // Send Color
-    body = "{\"seg\": [{\"col\": [${rgbValue}]}]}"
+    body = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment},\"col\": [${rgbValue}]}]}"
     logDebug("Setting color: ${body}")
     sendEthernetPost("/json/state", body)
     refresh()
