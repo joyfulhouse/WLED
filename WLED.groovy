@@ -126,9 +126,11 @@ def parsePostResp(resp){
 }
 
 def synchronize(data){
-    logDebug "Synchronizing status: ${data}"
+    logDebug "Synchronizing status: ${data.seg[settings.ledSegment?.toInteger() ?: 0]}}"
+	seg = data.seg[settings.ledSegment?.toInteger() ?: 0]
+	
     // Power
-    if(data.on){
+    if(seg.on){
         if(device.currentValue("switch") != "on")
             sendEvent(name: "switch", value: "on")
     }
@@ -142,12 +144,12 @@ def synchronize(data){
 
 // Switch Capabilities
 def on() {
-    sendEthernetPost("/json/state","{\"on\": true}")    
+    sendEthernetPost("/json/state","{\"on\":true, \"seg\": [{\"id\": ${ledSegment}, \"on\":true}]}")  
     sendEvent(name: "switch", value: "on")
 }
 
 def off() {
-    sendEthernetPost("/json/state","{\"on\": false}")    
+    sendEthernetPost("/json/state","{\"on\":true, \"seg\": [{\"id\": ${ledSegment}, \"on\":false}]}")    
     sendEvent(name: "switch", value: "off")
 }
 
@@ -279,7 +281,7 @@ def setRgbColor(rgbValue){
     setEffect(0,0)
     
     // Send Color
-  body = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment},\"col\": [${rgbValue}]}]}"
+    body = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment}, \"on\":true, \"col\": [${rgbValue}]}]}"
     logDebug("Setting color: ${body}")
     sendEthernetPost("/json/state", body)
     refresh()
