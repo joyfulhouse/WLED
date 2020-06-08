@@ -24,8 +24,8 @@ metadata {
         attribute "effectName", "string"
         attribute "paletteName", "string"
 
-        command "getEffects"
-        command "getPalettes"
+        //command "getEffects"
+        //command "getPalettes"
         command "setEffect", 
             [
                 [name:"FX ID", type: "NUMBER", description: "Effect ID", constraints: []],
@@ -127,8 +127,8 @@ def parsePostResp(resp){
 
 def synchronize(data){
     logDebug "Synchronizing status: ${data.seg[settings.ledSegment?.toInteger() ?: 0]}}"
-	seg = data.seg[settings.ledSegment?.toInteger() ?: 0]
-	
+    seg = data.seg[settings.ledSegment?.toInteger() ?: 0]
+    
     // Power
     if(seg.on){
         if(device.currentValue("switch") != "on")
@@ -226,9 +226,15 @@ def setLevel(value,rate) {
         if(!isOn)
             on()
         
-        setValue = (value.toInteger() * 2.55).toInteger()
+        if(value >= 100) {
+            setValue = 255
+            value = 100
+        }
+        else {
+            setValue = (value.toInteger() * 2.55).toInteger()
+        }
         
-        msg = "{\"on\": true, \"bri\": ${setValue}}"
+        msg = "{\"on\":true, \"seg\": [{\"id\": ${ledSegment}, \"on\":true, \"bri\": ${setValue}}]}"
         sendEthernetPost("/json/state", msg)
         sendEvent(name: "level", value: value, descriptionText: "${device.displayName} is ${value}%", unit: "%")
     } else {
@@ -247,7 +253,9 @@ def setColor(value){
     if (value.level == 0) {
         off()
         return
-    } else {
+    } else if(value.level >= 100) {
+        level = 255
+    }    else {
         level = value.level * 256
     }
     
@@ -268,9 +276,10 @@ def setColorTemperature(temp){
 }
 
 def setHue(value){
+    //TODO: Fix color conversion
     def color = [:]
     color.hue = value
-    color.level = state.bri/256*100
+    color.level = 255
     color.saturation = 100
     
     setColor(color)
@@ -473,13 +482,13 @@ def setEffect(fx, sx, ix, pal){
     def effectName = state.effects.getAt(fx.intValue())
     def descriptionText = "${device.getDisplayName()} effect is ${effectName}"
     if (txtEnable) log.info "${descriptionText}"
-    sendEvent(name: "effectName", value: effectName, descriptionText: descriptionText)
+        sendEvent(name: "effectName", value: effectName, descriptionText: descriptionText)
         
     // Palette Name
     def paletteName = state.palettes.getAt(pal.intValue())
     descriptionText = "${device.getDisplayName()} color palette is ${paletteName}"
     if (txtEnable) log.info "${descriptionText}"
-    sendEvent(name: "paletteName", value: paletteName, descriptionText: descriptionText)
+        sendEvent(name: "paletteName", value: paletteName, descriptionText: descriptionText)
 
     if(fx > 0){
         // Color Name
