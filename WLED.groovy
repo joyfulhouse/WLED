@@ -459,7 +459,7 @@ def getPalettes(){
 
 def setEffect(fx){
     def i = ledSegment?.toInteger() ?: 0
-    setEffect(fx, state.seg[i].sx, state.seg[i].ix, state.seg.pal)
+    setEffect(fx, state.seg[i].sx, state.seg[i].ix, state.seg[i].pal)
 }
 
 def setEffect(fx, pal){
