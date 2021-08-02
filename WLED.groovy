@@ -23,6 +23,7 @@ metadata {
         attribute "colorName", "string"
         attribute "effectName", "string"
         attribute "paletteName", "string"
+        attribute "presetValue", "Number"
 
         //command "getEffects"
         //command "getPalettes"
@@ -32,6 +33,10 @@ metadata {
                 [name:"FX Speed", type: "NUMBER", description: "Relative Effect Speed (0-255)", constraints: []],
                 [name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
                 [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
+            ]
+         command "setPreset", 
+            [
+                [name:"Preset", type: "NUMBER", description: "Preset Number", constraints: []],
             ]
     }
 
@@ -516,4 +521,13 @@ def strobe(){
 def both(){
     //Cannot do both, default to strobe
     strobe()
+}
+
+def setPreset(preset)
+{
+    logDebug("${device.getDisplayName()} setting preset to ${preset}")
+    
+    msg = "{\"on\":true, \"ps\": ${preset}}"
+    sendEthernetPost("/json/state", msg)
+    sendEvent(name: "presetValue", value: preset, descriptionText: "${device.displayName} preset is set to ${preset}")
 }
