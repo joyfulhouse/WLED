@@ -24,7 +24,7 @@ metadata {
         attribute "effectName", "string"
         attribute "paletteName", "string"
         attribute "presetValue", "Number"
-
+        
         //command "getEffects"
         //command "getPalettes"
         command "setEffect", 
@@ -34,15 +34,10 @@ metadata {
                 [name:"FX Intensity", type: "NUMBER", description: "Effect Intensity(0-255)", constraints: []],
                 [name:"Color Palette", type: "NUMBER", description: "Color Palette", constraints: []]
             ]
-         command "setPreset", 
+        command "setPreset", 
             [
                 [name:"Preset", type: "NUMBER", description: "Preset Number", constraints: []],
             ]
-    }
-
-    // simulator metadata
-    simulator {
-    
     }
     
     // Preferences
@@ -119,15 +114,35 @@ def parseResp(resp) {
     def palettes = state.palettes
     
     // Update State
-    state = resp.data
+    logDebug resp
+    state = resp
     state.effects = effects
     state.palettes = palettes
     
-    synchronize(resp.data)
+    synchronize(resp)
+}
+
+// Handle async callback
+def parseResp(resp, data) {
+    if(resp.getStatus() == 200)
+        parseResp(resp.getJson())
+    else if(resp.getStatus() == 408)
+        log.error "HTTP Request Timeout"
+    else
+        log.error "Unhandled HTTP Error"
 }
 
 def parsePostResp(resp){
+    // TODO
+}
 
+def parsePostResp(resp, data) {
+    if(resp.getStatus() == 200)
+        parsePostResp(resp.getJson())
+    else if(resp.getStatus() == 408)
+        log.error "HTTP Request Timeout"
+    else
+        log.error "Unhandled HTTP Error"
 }
 
 def synchronize(data){
@@ -311,13 +326,14 @@ def sendEthernet(path) {
         def params = [
             uri: "${settings.uri}",
             path: "${path}",
-            headers: [:]
+            requestContentType: 'application/json',
+            contentType: 'application/json',
+            headers: [:],
+            timeout: 5
         ]
 
         try {
-            httpGet(params) { resp ->
-                parseResp(resp)
-            }
+            asynchttpGet('parseResp',params)
         } catch (e) {
             log.error "something went wrong: $e"
         }
@@ -330,17 +346,14 @@ def sendEthernetPost(path, body) {
         def params = [
             uri: "${settings.uri}",
             path: "${path}",
-            headers: [
-                    "Content-Type": "application/json",
-                    "Accept": "*/*"
-                ],
-            body: "${body}"
+            requestContentType: 'application/json',
+            contentType: 'application/json',
+            body: "${body}",
+            timeout: 5
         ]
 
-        try {
-            httpPost(params) { resp ->
-                parsePostResp(resp)
-            }
+        try {            
+            asynchttpPost(null, params)
         } catch (e) {
             log.error "something went wrong: $e"
         }
@@ -427,7 +440,8 @@ def getEffects(){
             "Content-Type": "application/json",
             "Accept": "*/*"
         ],
-        body: "${body}"
+        body: "${body}",
+        timeout: 5
     ]
 
     try {
@@ -449,7 +463,8 @@ def getPalettes(){
             "Content-Type": "application/json",
             "Accept": "*/*"
         ],
-        body: "${body}"
+        body: "${body}",
+        timeout: 5
     ]
 
     try {
@@ -505,6 +520,15 @@ def setEffect(fx, sx, ix, pal){
     refresh()
 }
 
+def setPreset(preset)
+{
+    logDebug("${device.getDisplayName()} setting preset to ${preset}")
+
+    msg = "{\"on\":true, \"ps\": ${preset}}"
+    sendEthernetPost("/json/state", msg)
+    sendEvent(name: "presetValue", value: preset, descriptionText: "${device.displayName} preset is set to ${preset}")
+}
+
 // Alarm Functions
 def siren(){
     // Play "Siren" effect
@@ -521,13 +545,4 @@ def strobe(){
 def both(){
     //Cannot do both, default to strobe
     strobe()
-}
-
-def setPreset(preset)
-{
-    logDebug("${device.getDisplayName()} setting preset to ${preset}")
-    
-    msg = "{\"on\":true, \"ps\": ${preset}}"
-    sendEthernetPost("/json/state", msg)
-    sendEvent(name: "presetValue", value: preset, descriptionText: "${device.displayName} preset is set to ${preset}")
 }
