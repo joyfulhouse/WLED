@@ -353,7 +353,7 @@ def sendEthernetPost(path, body) {
         ]
 
         try {            
-            asynchttpPost(null, params)
+            asynchttpPut(null, params)
         } catch (e) {
             log.error "something went wrong: $e"
         }
