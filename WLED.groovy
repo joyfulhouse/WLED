@@ -288,6 +288,14 @@ def setColor(value){
     setGenericName(value.hue)
 }
 
+def setColorTemperature(temp, level, transitionTime){
+    if (level) {
+      setLevel(level, transitionTime)
+    }
+    
+    setColorTemperature(temp)
+}
+
 def setColorTemperature(temp){
     on()
     rgbValue = colorTempToRgb(temp)
