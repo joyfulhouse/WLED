@@ -234,12 +234,11 @@ def setGenericName(hue){
 
 // Dimmer function
 def setLevel(value) {
-    setLevel(value,(transitionTime?.toBigDecimal() ?: 1000) / 1000)
+    setLevel(value, (transitionTime?.toBigDecimal() ?: 1000) / 1000)
 }
 
-def setLevel(value,rate) {
-    rate = rate.toBigDecimal()
-    def scaledRate = (rate * 10).toInteger()
+def setLevel(value, rate) {
+    // TODO: implement transition rate
     
     if(value > 0){
         def isOn = device.currentValue("switch") == "on"
