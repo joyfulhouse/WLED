@@ -295,6 +295,14 @@ def setColorTemperature(temp, level, transitionTime){
     setColorTemperature(temp)
 }
 
+def setColorTemperature(temp, level){
+    if (level) {
+      setLevel(level)
+    }
+    
+    setColorTemperature(temp)
+}
+
 def setColorTemperature(temp){
     on()
     rgbValue = colorTempToRgb(temp)
