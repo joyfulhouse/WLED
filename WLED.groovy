@@ -535,6 +535,11 @@ def setEffect(fx, sx, ix, pal){
     refresh()
 }
 
+def setEffectCustom(fx, sx, ix, pal){
+    // support for webCORE
+    setEffect(fx, sx, ix, pal)
+}
+
 def setPreset(preset)
 {
     logDebug("${device.getDisplayName()} setting preset to ${preset}")
