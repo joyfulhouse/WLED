@@ -64,6 +64,8 @@ def installed() {
 
 def updated() {
     setSchedule()
+    getEffects()
+    getPalettes()
     refresh()
 }
 
@@ -470,7 +472,7 @@ def getEffects(){
 }
 
 def getPalettes(){
-    logDebug "Getting Effects List"
+    logDebug "Getting Palettes List"
     def params = [
         uri: "${settings.uri}",
         path: "/json/palettes",
