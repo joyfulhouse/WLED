@@ -48,6 +48,7 @@ metadata {
         input name: "refreshInterval", type: "enum", description: "", title: "Refresh interval", options: [
             [30: "30 Seconds"],[60:"1 Minute"],[300:"5 Minutes"],[600:"10 Minutes"],[1800:"30 Minutes"],[3600:"1 Hour"],[0:"Disabled"]],
             defaultValue: 3600
+        input name: "powerOffParent", type: "bool", description:"Turn off segment and parent controller", title: "Power Off", defaultValue: false
         input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
         input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
     }
@@ -171,7 +172,19 @@ def on() {
 }
 
 def off() {
-    sendEthernetPost("/json/state","{\"on\":true, \"seg\": [{\"id\": ${ledSegment}, \"on\":false}]}")    
+    if(powerOffParent)
+        parentOff()
+    else
+        segmentOff()
+}
+
+def parentOff(){
+    sendEthernetPost("/json/state","{\"on\":false,\"pl\":0,\"ps\":0,\"seg\": [{\"id\": ${ledSegment}, \"on\":false}]}")    
+    sendEvent(name: "switch", value: "off")
+}
+
+def segmentOff() {
+    sendEthernetPost("/json/state","{\"pl\":0,\"ps\":0,\"seg\": [{\"id\": ${ledSegment}, \"on\":false}]}")    
     sendEvent(name: "switch", value: "off")
 }
 
