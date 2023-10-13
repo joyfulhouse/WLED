@@ -43,7 +43,7 @@ metadata {
     // Preferences
     preferences {
         input "uri", "text", title: "URI", description: "(eg. http://[wled_ip_address])", required: true, displayDuringSetup: true
-        input name: "ledSegment", type: "number", title: "LED Segment", defaultValue: 0
+        input name: "ledSegment", type: "number", title: "LED Segment", defaultValue: 1
         input name: "transitionTime", type: "enum", description: "", title: "Transition time", options: [[500:"500ms"],[1000:"1s"],[1500:"1.5s"],[2000:"2s"],[5000:"5s"]], defaultValue: 1000
         input name: "refreshInterval", type: "enum", description: "", title: "Refresh interval", options: [
             [30: "30 Seconds"],[60:"1 Minute"],[300:"5 Minutes"],[600:"10 Minutes"],[1800:"30 Minutes"],[3600:"1 Hour"],[0:"Disabled"]],
